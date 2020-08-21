@@ -11,21 +11,21 @@
 
   <meta property="og:title" content="7.3 Accès aux bases de données | Science des données biologiques 2" />
   <meta property="og:type" content="book" />
-  <meta property="og:url" content="https://biodatascience-course.sciviews.org/sdd-umons2/" />
-  <meta property="og:image" content="https://biodatascience-course.sciviews.org/sdd-umons2/images/front-cover.png" />
+  <meta property="og:url" content="https://biodatascience-course.sciviews.org/sdd-umons2-2019/" />
+  <meta property="og:image" content="https://biodatascience-course.sciviews.org/sdd-umons2-2019/images/front-cover.png" />
   <meta property="og:description" content="Tutoriel interactif pour la science des données avec R &amp; SciViews-R, partie 2." />
-  <meta name="github-repo" content="biodatascience-course/sdd-umons2" />
+  <meta name="github-repo" content="biodatascience-course/sdd-umons2-2019" />
 
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="7.3 Accès aux bases de données | Science des données biologiques 2" />
   
   <meta name="twitter:description" content="Tutoriel interactif pour la science des données avec R &amp; SciViews-R, partie 2." />
-  <meta name="twitter:image" content="https://biodatascience-course.sciviews.org/sdd-umons2/images/front-cover.png" />
+  <meta name="twitter:image" content="https://biodatascience-course.sciviews.org/sdd-umons2-2019/images/front-cover.png" />
 
 <meta name="author" content="Philippe Grosjean &amp; Guyliann Engels (avec des contributions de Raphaël Conotte)">
 
 
-<meta name="date" content="2020-08-12">
+<meta name="date" content="2020-08-21">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -293,7 +293,8 @@ code span.wa { color: #bf0303; } /* Warning */
 </ul></li>
 <li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>Références</a></li>
 <li class="divider"></li>
-<li><a href="http://biodatascience-course.sciviews.org">Site Web du cours</a></li>
+<li><a href="https://wp.sciviews.org/sdd-umons2">Dernière version de ce cours</a></li>
+<li><a href="https://wp.sciviews.org">Site Web du cours</a></li>
 <li><a href="https://github.com/BioDataScience-Course">Site Github du cours</a></li>
 <br/>
 <li><a href="https://github.com/rstudio/bookdown" target="blank">Publié avec bookdown</a></li>
@@ -424,7 +425,7 @@ con &lt;-<span class="st"> </span><span class="kw">dbConnect</span>(<span class=
 <p>Voici quelques instructions typiques pour interroger cette base de données depuis R :</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Liste les tables présentes dans la base de données</span>
 <span class="kw">dbListTables</span>(con)</code></pre>
-<pre><code># [1] &quot;iris&quot;   &quot;mtcars&quot;</code></pre>
+<pre><code># [1] &quot;iris&quot;       &quot;mtcars&quot;     &quot;versicolor&quot;</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Extraction de données à l&#39;aide d&#39;une requête SQL</span>
 (setosa &lt;-<span class="st"> </span><span class="kw">dbGetQuery</span>(con, <span class="st">&quot;SELECT * FROM iris WHERE Species is &#39;setosa&#39;&quot;</span>))</code></pre>
 <pre><code>#    Sepal.Length Sepal.Width Petal.Length Petal.Width Species
@@ -620,7 +621,7 @@ con &lt;-<span class="st"> </span><span class="kw">dbConnect</span>(odbc<span cl
 my_db &lt;-<span class="st"> </span><span class="kw">src_sqlite</span>(dbfile) <span class="co"># Utiliser create = TRUE pour la créer</span>
 my_db</code></pre>
 <pre><code># src:  sqlite 3.22.0 [/media/sf_shared/database.sqlite]
-# tbls: iris, mtcars</code></pre>
+# tbls: iris, mtcars, versicolor</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r">my_table &lt;-<span class="st"> </span><span class="kw">tbl</span>(my_db, <span class="kw">sql</span>(<span class="st">&quot;SELECT * FROM iris&quot;</span>))
 (df2 &lt;-<span class="st"> </span><span class="kw">collect</span>(my_table))</code></pre>
 <pre><code># # A tibble: 150 x 5
@@ -727,7 +728,7 @@ my_db</code></pre>
 # 10    9         Copy  1  4  0           00      NA
 # 11   10    ResultRow  4  1  0           00      NA
 # 12   11         Halt  0  0  0           00      NA
-# 13   12  Transaction  0  0  2         0 01      NA
+# 13   12  Transaction  0  0 45         0 01      NA
 # 14   13         Goto  0  1  0           00      NA</code></pre>
 <p>Il est possible de réaliser des choses plus complexes ! On peut naturellement chainer tout cela avec le pipe <code>%&gt;.%</code>, ou combiner les requêtes comme on veut. Rien n’est fait avant de <code>collect()</code>er les résultats.</p>
 <pre class="sourceCode r"><code class="sourceCode r">my_table <span class="op">%&gt;.%</span>
@@ -868,7 +869,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/BioDataScience-Course/sdd-umons2/edit/master/07-acp-afc.Rmd",
+"link": "https://github.com/BioDataScience-Course/sdd-umons2-2019/edit/master/07-acp-afc.Rmd",
 "text": "Editer"
 },
 "history": {

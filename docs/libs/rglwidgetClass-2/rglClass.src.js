@@ -1,300 +1,256 @@
-// To generate the help pages for this library, use
-
-// jsdoc --destination ../../../doc/rglwidgetClass --template ~/node_modules/jsdoc-baseline rglClass.src.js
-
-// To validate, use
-
-// setwd(".../inst/htmlwidgets/lib/rglClass")
-// hints <- js::jshint(readLines("rglClass.src.js"))
-// hints[, c("line", "reason")]
+if (typeof root !== "undefined") {
+        self.scene.rootSubscene = root;
+      }
+      if (typeof initSubs !== "undefined")
+        allsubs = allsubs.concat(initSubs);
+      allsubs = self.unique(allsubs);
+      for (i = 0; i < allsubs.length; i++) {
+        self.initSubscene(allsubs[i]);
+      }
+      if (typeof skipRedraw !== "undefined") {
+        root = self.getObj(self.scene.rootSubscene);
+        root.par3d.skipRedraw = skipRedraw;
+      }
+      if (redraw)
+        self.drawScene();
+    };
+    
+    /**
+     * Set mouse mode for a subscene
+     * @param { string } mode - name of mode
+     * @param { number } button - button number (1 to 3)
+     * @param { number } subscene - subscene id number
+     * @param { number } stayActive - if truthy, don't clear brush
+     */
+    rglwidgetClass.prototype.setMouseMode = function(mode, button, subscene, stayActive) {
+      var sub = this.getObj(subscene),
+          which = ["left", "right", "middle"][button - 1];
+      if (!stayActive && sub.par3d.mouseMode[which] === "selecting")
+        this.clearBrush(null);
+      sub.par3d.mouseMode[which] = mode;
+    };
 
 /**
- * The class of an rgl widget
+ * The class of an rgl timer object
  * @class
 */
-rglwidgetClass = function() {
-    this.canvas = null;
-    this.userMatrix = new CanvasMatrix4();
-    this.types = [];
-    this.prMatrix = new CanvasMatrix4();
-    this.mvMatrix = new CanvasMatrix4();
-    this.vp = null;
-    this.prmvMatrix = null;
-    this.origs = null;
-    this.gl = null;
-    this.scene = null;
-    this.select = {state: "inactive", subscene: null, region: {p1: {x:0, y:0}, p2: {x:0, y:0}}};
-    this.drawing = false;
+
+/**
+ * Construct an rgltimerClass object
+ * @constructor
+ * @param { function } Tick - action when timer fires
+ * @param { number } startTime - nominal start time in seconds
+ * @param { number } interval - seconds between updates
+ * @param { number } stopTime - nominal stop time in seconds
+ * @param { number } stepSize - nominal step size
+ * @param { number } value - current nominal time
+ * @param { number } rate - nominal units per second
+ * @param { string } loop - "none", "cycle" or "oscillate"
+ * @param { Object } actions - list of actions
+ */
+rgltimerClass = function(Tick, startTime, interval, stopTime, stepSize, value, rate, loop, actions) {
+  this.enabled = false;
+  this.timerId = 0;
+  /** nominal start time in seconds */
+  this.startTime = startTime;   
+  /** current nominal time */      
+  this.value = value;
+  /** seconds between updates */                 
+  this.interval = interval;
+  /** nominal stop time */           
+  this.stopTime = stopTime;
+  /** nominal step size */           
+  this.stepSize = stepSize;
+  /** nominal units per second */           
+  this.rate = rate;
+  /** "none", "cycle", or "oscillate" */                   
+  this.loop = loop;
+  /** real world start time */                   
+  this.realStart = undefined;
+  /** multiplier for fast-forward or reverse */         
+  this.multiplier = 1;                
+  this.actions = actions;
+  this.Tick = Tick;
 };
 
-
-    /**
-     * Multiply matrix by vector
-     * @returns {number[]}
-     * @param M {number[][]} Left operand
-     * @param v {number[]} Right operand
-     */
-    rglwidgetClass.prototype.multMV = function(M, v) {
-        return [ M.m11 * v[0] + M.m12 * v[1] + M.m13 * v[2] + M.m14 * v[3],
-                 M.m21 * v[0] + M.m22 * v[1] + M.m23 * v[2] + M.m24 * v[3],
-                 M.m31 * v[0] + M.m32 * v[1] + M.m33 * v[2] + M.m34 * v[3],
-                 M.m41 * v[0] + M.m42 * v[1] + M.m43 * v[2] + M.m44 * v[3]
-               ];
-    };
-    
-    /**
-     * Multiply row vector by Matrix
-     * @returns {number[]}
-     * @param v {number[]} left operand
-     * @param M {number[][]} right operand
-     */
-    rglwidgetClass.prototype.multVM = function(v, M) {
-        return [ M.m11 * v[0] + M.m21 * v[1] + M.m31 * v[2] + M.m41 * v[3],
-                 M.m12 * v[0] + M.m22 * v[1] + M.m32 * v[2] + M.m42 * v[3],
-                 M.m13 * v[0] + M.m23 * v[1] + M.m33 * v[2] + M.m43 * v[3],
-                 M.m14 * v[0] + M.m24 * v[1] + M.m34 * v[2] + M.m44 * v[3]
-               ];
-    };
-    
-    /**
-     * Euclidean length of a vector
-     * @returns {number}
-     * @param v {number[]}
-     */
-    rglwidgetClass.prototype.vlen = function(v) {
-      return Math.sqrt(this.dotprod(v, v));
-    };
-
-    /**
-     * Dot product of two vectors
-     * @instance rglwidgetClass
-     * @returns {number}
-     * @param a {number[]}
-     * @param b {number[]}
-     */
-    rglwidgetClass.prototype.dotprod = function(a, b) {
-      return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
-    };
-
-    /**
-     * Cross product of two vectors
-     * @returns {number[]}
-     * @param a {number[]}
-     * @param b {number[]}
-     */
-    rglwidgetClass.prototype.xprod = function(a, b) {
-      return [a[1]*b[2] - a[2]*b[1],
-          a[2]*b[0] - a[0]*b[2],
-          a[0]*b[1] - a[1]*b[0]];
-    };
-
-    /**
-     * Bind vectors or matrices by columns
-     * @returns {number[][]}
-     * @param a {number[]|number[][]}
-     * @param b {number[]|number[][]}
-     */
-    rglwidgetClass.prototype.cbind = function(a, b) {
-      if (b.length < a.length)
-        b = this.repeatToLen(b, a.length);
-      else if (a.length < b.length)
-        a = this.repeatToLen(a, b.length);
-      return a.map(function(currentValue, index, array) {
-            return currentValue.concat(b[index]);
-      });
-    };
-
-    /**
-     * Swap elements
-     * @returns {any[]}
-     * @param a {any[]}
-     * @param i {number} Element to swap
-     * @param j {number} Other element to swap
-     */
-    rglwidgetClass.prototype.swap = function(a, i, j) {
-      var temp = a[i];
-      a[i] = a[j];
-      a[j] = temp;
-    };
-
-    /**
-     * Flatten a matrix into a vector
-     * @returns {any[]}
-     * @param a {any[][]}
-     */
-    rglwidgetClass.prototype.flatten = function(arr, result) {
-      var value;
-      if (typeof result === "undefined") result = [];
-      for (var i = 0, length = arr.length; i < length; i++) {
-        value = arr[i];
-        if (Array.isArray(value)) {
-          this.flatten(value, result);
-        } else {
-          result.push(value);
-        }
+  /**
+   * Start playing timer object
+   */
+  rgltimerClass.prototype.play = function() {
+    if (this.enabled) {
+      this.enabled = false;
+      window.clearInterval(this.timerId);
+      this.timerId = 0;
+      return;
+    }
+    var tick = function(self) {
+      var now = new Date();
+      self.value = self.multiplier*self.rate*(now - self.realStart)/1000 + self.startTime;
+      self.forceToRange();
+      if (typeof self.Tick !== "undefined") {
+        self.Tick(self.value);
       }
-      return result;
-    };
 
-    /**
-     * set element of 1d or 2d array as if it was flattened.
-     * Column major, zero based!
-     * @returns {any[]|any[][]}
-     * @param {any[]|any[][]} a - array
-     * @param {number} i - element
-     * @param {any} value
-     */
-    rglwidgetClass.prototype.setElement = function(a, i, value) {
-      if (Array.isArray(a[0])) {
-        var dim = a.length,
-            col = Math.floor(i/dim),
-            row = i % dim;
-        a[row][col] = value;
+    };
+    this.realStart = new Date() - 1000*(this.value - this.startTime)/this.rate/this.multiplier;
+    this.timerId = window.setInterval(tick, 1000*this.interval, this);
+    this.enabled = true;
+  };
+
+  /**
+   * Force value into legal range
+   */
+  rgltimerClass.prototype.forceToRange = function() {
+    if (this.value > this.stopTime + this.stepSize/2 || this.value < this.startTime - this.stepSize/2) {
+      if (!this.loop) {
+        this.reset();
       } else {
-        a[i] = value;
+        var cycle = this.stopTime - this.startTime + this.stepSize,
+            newval = (this.value - this.startTime) % cycle + this.startTime;
+        if (newval < this.startTime) {
+          newval += cycle;
+        }
+        this.realStart += (this.value - newval)*1000/this.multiplier/this.rate;
+        this.value = newval;
       }
+    }
+  };
+
+  /**
+   * Reset to start values
+   */
+  rgltimerClass.prototype.reset = function() {
+    this.value = this.startTime;
+    this.newmultiplier(1);
+    if (typeof this.Tick !== "undefined") {
+        this.Tick(this.value);
+    }
+    if (this.enabled)
+      this.play();  /* really pause... */
+    if (typeof this.PlayButton !== "undefined")
+      this.PlayButton.value = "Play";
+  };
+
+  /**
+   * Increase the multiplier to play faster
+   */
+  rgltimerClass.prototype.faster = function() {
+    this.newmultiplier(Math.SQRT2*this.multiplier);
+  };
+
+  /**
+   * Decrease the multiplier to play slower
+   */
+  rgltimerClass.prototype.slower = function() {
+    this.newmultiplier(this.multiplier/Math.SQRT2);
+  };
+
+  /**
+   * Change sign of multiplier to reverse direction
+   */
+  rgltimerClass.prototype.reverse = function() {
+    this.newmultiplier(-this.multiplier);
+  };
+
+  /**
+   * Set multiplier for play speed
+   * @param { number } newmult - new value
+   */
+  rgltimerClass.prototype.newmultiplier = function(newmult) {
+    if (newmult != this.multiplier) {
+      this.realStart += 1000*(this.value - this.startTime)/this.rate*(1/this.multiplier - 1/newmult);
+      this.multiplier = newmult;
+    }
+  };
+
+  /**
+   * Take one step
+   */
+  rgltimerClass.prototype.step = function() {
+    this.value += this.rate*this.multiplier;
+    this.forceToRange();
+    if (typeof this.Tick !== "undefined")
+      this.Tick(this.value);
+  };
+);
+        for (var i=0; i < components.length; i++) {
+          switch(components[i]) {
+            case "Slider": addSlider(control.start, control.stop,
+                                   control.step, control.value);
+              break;
+            case "Label": addLabel(control.labels, control.start,
+                                   control.step, control.precision);
+              break;
+            default:
+              addButton(components[i], buttonLabels[i], control.pause);
+          }
+        }
+        el.rgltimer.Tick();
     };
 
     /**
-     * Transpose an array
-     * @returns {any[][]}
-     * @param {any[][]} a
+     * Apply all registered controls
+     * @param { Object } el - DOM element of the control
+     * @param { Object } x - List of actions to apply
+     * @param { boolean } [draw=true] - Whether to redraw after applying
      */
-    rglwidgetClass.prototype.transpose = function(a) {
-      var newArray = [],
-          n = a.length,
-          m = a[0].length,
-          i;
-      for(i = 0; i < m; i++){
-        newArray.push([]);
+    rglwidgetClass.prototype.applyControls = function(el, x, draw) {
+      var self = this, reinit = x.reinit, i, control, type;
+      for (i = 0; i < x.length; i++) {
+        control = x[i];
+        type = control.type;
+        self[type](el, control);
       }
+      if (typeof reinit !== "undefined" && reinit !== null) {
+        reinit = [].concat(reinit);
+        for (i = 0; i < reinit.length; i++)
+          self.getObj(reinit[i]).initialized = false;
+      }
+      if (typeof draw === "undefined" || draw)
+        self.drawScene();
+    };
 
-      for(i = 0; i < n; i++){
-        for(var j = 0; j < m; j++){
-          newArray[j].push(a[i][j]);
+    /**
+     * Handler for scene change
+     * @param { Object } message - What sort of scene change to do?
+     */
+    rglwidgetClass.prototype.sceneChangeHandler = function(message) {
+      var self = document.getElementById(message.elementId).rglinstance,
+          objs = message.objects, mat = message.material,
+          root = message.rootSubscene,
+          initSubs = message.initSubscenes,
+          redraw = message.redrawScene,
+          skipRedraw = message.skipRedraw,
+          deletes, subs, allsubs = [], i,j;
+      if (typeof message.delete !== "undefined") {
+        deletes = [].concat(message.delete);
+        if (typeof message.delfromSubscenes !== "undefined")
+          subs = [].concat(message.delfromSubscenes);
+        else
+          subs = [];
+        for (i = 0; i < deletes.length; i++) {
+          for (j = 0; j < subs.length; j++) {
+            self.delFromSubscene(deletes[i], subs[j]);
+          }
+          delete self.scene.objects[deletes[i]];
         }
       }
-      return newArray;
-    };
-
-    /**
-     * Calculate sum of squares of a numeric vector
-     * @returns {number}
-     * @param {number[]} x
-     */
-    rglwidgetClass.prototype.sumsq = function(x) {
-      var result = 0, i;
-      for (i=0; i < x.length; i++)
-        result += x[i]*x[i];
-      return result;
-    };
-
-    /**
-     * Convert a matrix to a CanvasMatrix4
-     * @returns {CanvasMatrix4}
-     * @param {number[][]|number[]} mat
-     */
-    rglwidgetClass.prototype.toCanvasMatrix4 = function(mat) {
-      if (mat instanceof CanvasMatrix4)
-        return mat;
-      var result = new CanvasMatrix4();
-      mat = this.flatten(this.transpose(mat));
-      result.load(mat);
-      return result;
-    };
-
-    /**
-     * Convert an R-style numeric colour string to an rgb vector
-     * @returns {number[]}
-     * @param {string} s
-     */
-    rglwidgetClass.prototype.stringToRgb = function(s) {
-      s = s.replace("#", "");
-      var bigint = parseInt(s, 16);
-      return [((bigint >> 16) & 255)/255,
-              ((bigint >> 8) & 255)/255,
-               (bigint & 255)/255];
-    };
-
-    /**
-     * Take a component-by-component product of two 3 vectors
-     * @returns {number[]}
-     * @param {number[]} x
-     * @param {number[]} y
-     */
-    rglwidgetClass.prototype.componentProduct = function(x, y) {
-      if (typeof y === "undefined") {
-        this.alertOnce("Bad arg to componentProduct");
+      if (typeof objs !== "undefined") {
+        Object.keys(objs).forEach(function(key){
+          key = parseInt(key, 10);
+          self.scene.objects[key] = objs[key];
+          self.initObj(key);
+          var obj = self.getObj(key),
+              subs = [].concat(obj.inSubscenes), k;
+          allsubs = allsubs.concat(subs);
+          for (k = 0; k < subs.length; k++)
+            self.addToSubscene(key, subs[k]);
+        });
       }
-      var result = new Float32Array(3), i;
-      for (i = 0; i<3; i++)
-        result[i] = x[i]*y[i];
-      return result;
-    };
-
-    /**
-     * Get next higher power of two
-     * @returns { number }
-     * @param { number } value - input value
-     */
-    rglwidgetClass.prototype.getPowerOfTwo = function(value) {
-      var pow = 1;
-      while(pow<value) {
-        pow *= 2;
+      if (typeof mat !== "undefined") {
+        self.scene.material = mat;
       }
-      return pow;
-    };
-
-    /**
-     * Unique entries
-     * @returns { any[] }
-     * @param { any[] } arr - An array
-     */
-    rglwidgetClass.prototype.unique = function(arr) {
-      arr = [].concat(arr);
-      return arr.filter(function(value, index, self) {
-        return self.indexOf(value) === index;
-      });
-    };
-
-    /**
-     * Shallow compare of arrays
-     * @returns { boolean }
-     * @param { any[] } a - An array
-     * @param { any[] } b - Another array
-     */
-    rglwidgetClass.prototype.equalArrays = function(a, b) {
-      return a === b || (a && b &&
-                      a.length === b.length &&
-                      a.every(function(v, i) {return v === b[i];}));
-    };
-    
-    /**
-     * Repeat an array to a desired length
-     * @returns {any[]}
-     * @param {any | any[]} arr The input array
-     * @param {number} len The desired output length
-     */
-    rglwidgetClass.prototype.repeatToLen = function(arr, len) {
-      arr = [].concat(arr);
-      while (arr.length < len/2)
-        arr = arr.concat(arr);
-      return arr.concat(arr.slice(0, len - arr.length));
-    };
-
-    /**
-     * Give a single alert message, not to be repeated.
-     * @param {string} msg  The message to give.
-     */
-    rglwidgetClass.prototype.alertOnce = function(msg) {
-      if (typeof this.alerted !== "undefined")
-        return;
-      this.alerted = true;
-      alert(msg);
-    };
-
-    rglwidgetClass.prototype.f_is_lit = 1;
-    rglwidgetClass.prototype.f_is_smooth = 2;
+      totype.f_is_smooth = 2;
     rglwidgetClass.prototype.f_has_texture = 4;
     rglwidgetClass.prototype.f_depth_sort = 8;
     rglwidgetClass.prototype.f_fixed_quads = 16;

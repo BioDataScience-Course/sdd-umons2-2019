@@ -670,7 +670,7 @@ skimr::skim(bci_sub[, 1:15])
 #  n obs: 5 
 #  n variables: 15 
 # 
-# ── Variable type:integer ───────────────────────────────────────────────────
+# ── Variable type:integer ──────────────────────────────────────────────────────────────────────────────────────────────
 #                 variable missing complete n mean   sd p0 p25 p50 p75 p100
 #       Abarema.macradenia       0        5 5  0   0     0   0   0   0    0
 #    Acalypha.diversifolia       0        5 5  0   0     0   0   0   0    0

@@ -1,6 +1,6 @@
 book_filename: "sdd-umons2"
 #chapter_name: "Module "
-repo: https://github.com/BioDataScience-Course/sdd-umons2
+repo: 'https://github.com/BioDataScience-Course/sdd-umons2-2019'
 output_dir: docs
 clean: [packages.bib, bookdown.bbl]
 delete_merged_file: yes

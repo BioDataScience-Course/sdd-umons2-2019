@@ -1,7 +1,7 @@
 --- 
 title: "Science des données biologiques 2"
 author: "Philippe Grosjean & Guyliann Engels (avec des contributions de Raphaël Conotte)"
-date: "2020-08-12"
+date: "2020-08-21"
 site: bookdown::bookdown_site
 output:
   bookdown::gitbook:
@@ -11,8 +11,8 @@ documentclass: book
 bibliography: [book.bib, packages.bib]
 biblio-style: apalike
 link-citations: yes
-github-repo: biodatascience-course/sdd-umons2
-url: 'https\://biodatascience-course.sciviews.org/sdd-umons2/'
+github-repo: 'biodatascience-course/sdd-umons2-2019'
+url: 'https\://biodatascience-course.sciviews.org/sdd-umons2-2019/'
 description: "Tutoriel interactif pour la science des données avec R & SciViews-R, partie 2."
 cover-image: "images/front-cover.png"
 ---
@@ -21,11 +21,15 @@ cover-image: "images/front-cover.png"
 
 
 
+<div class="info">
+<p>Cet ouvrage a été écrit pour le cours de science des données II : analyse et modélisation à Mons pour l’année académique 2019-2020 (UMONS). Afin de trouver la dernière version disponible de cet ouvrage suivez le lien suivant : - <a href="https://wp.sciviews.org/sdd-umons2" class="uri">https://wp.sciviews.org/sdd-umons2</a></p>
+</div>
+
 Cet ouvrage interactif est le second d'une série de trois ouvrages traitant de la science des données biologiques. L'écriture de cette suite de livres a débuté au cours de l'année académique 2018-2019. 
 
 Pour l'année académique 2019-2020, cet ouvrage interactif sera le support du cours suivant :
 
-- [Science des données II : Analyse et modélisation, UMONS](http://applications.umons.ac.be/web/fr/pde/2019-2020/ue/US-B3-SCBIOL-006-M.htm) dont le responsable est Grosjean Philippe
+- [Science des données II : Analyse et modélisation, UMONS](http://applications.umons.ac.be/web/fr/pde/2019-2020/ue/US-B3-SCBIOL-006-M.htm) dont le responsable est Philippe Grosjean
 
 Cet ouvrage est conçu pour être utilisé de manière interactive en ligne. En effet, nous y ajoutons des vidéos, des démonstrations interactives, et des exercices sous forme de questionnaires interactifs également. **Ces différents éléments ne sont, bien évidemment, utilisables qu'en ligne.**
 
@@ -88,7 +92,7 @@ sessioninfo::session_info()
 #  collate  en_US.UTF-8                 
 #  ctype    en_US.UTF-8                 
 #  tz       Europe/Brussels             
-#  date     2020-08-12                  
+#  date     2020-08-21                  
 # 
 # ─ Packages ──────────────────────────────────────────────────────────────
 #  package     * version date       lib source        
